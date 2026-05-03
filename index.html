@@ -13,6 +13,10 @@
   .rate-row { display: flex; align-items: center; gap: 8px; }
   .rate-row label { font-size: 13px; color: #aaa; }
   .rate-row input { width: 80px; background: #222; border: 1px solid #333; border-radius: 8px; padding: 5px 8px; color: #fff; font-size: 13px; text-align: center; }
+  .sync-status { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+  .sync-status.online { background: #0d2215; color: #4caf82; }
+  .sync-status.offline { background: #2a1515; color: #c0504a; }
+  .sync-status.syncing { background: #1a1a0d; color: #c8a832; }
   .month-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
   .nav-btn { background: #222; border: 1px solid #333; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 18px; color: #eee; }
   .nav-btn:hover { background: #333; }
@@ -38,8 +42,6 @@
   .stat-label { font-size: 12px; color: #666; margin-bottom: 4px; }
   .stat-value { font-size: 20px; font-weight: 600; color: #eee; }
   .stat-value.green { color: #4caf82; }
-  .install-tip { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #666; text-align: center; line-height: 1.6; }
-  .install-tip strong { color: #999; }
 
   /* Modal */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
@@ -63,6 +65,9 @@
 <div class="app">
   <div class="top-row">
     <h1>Shift Tracker</h1>
+    <span class="sync-status syncing" id="sync-status">Connecting...</span>
+  </div>
+  <div class="top-row" style="margin-bottom:1rem;">
     <div class="rate-row">
       <label>€/hr</label>
       <input type="number" id="rate-input" value="12.1" step="0.1" min="0">
@@ -100,10 +105,6 @@
       </div>
     </div>
   </div>
-
-  <div class="install-tip">
-    <strong>Tip:</strong> In Chrome, tap the menu (⋮) → <strong>Add to Home Screen</strong> to use this like a real app.
-  </div>
 </div>
 
 <div class="modal-overlay hidden" id="modal">
@@ -130,7 +131,23 @@
   </div>
 </div>
 
-<script>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB5e76meytTCnafoSWkKErB6JLpcV8dVOk",
+  authDomain: "shift-tracker-91253.firebaseapp.com",
+  projectId: "shift-tracker-91253",
+  storageBucket: "shift-tracker-91253.firebasestorage.app",
+  messagingSenderId: "322987714943",
+  appId: "1:322987714943:web:c15b7f2669ab3c1aef524a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -138,18 +155,30 @@ const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 let currentDate = new Date();
 currentDate.setDate(1);
 let shifts = {};
-try { shifts = JSON.parse(localStorage.getItem('shifttracker_v1') || '{}'); } catch(e) {}
 let selectedDay = null;
 let hourlyRate = 12.1;
+
+const syncEl = document.getElementById('sync-status');
+
+// Listen to Firestore in real time
+const shiftsCol = collection(db, 'shifts');
+onSnapshot(shiftsCol, (snapshot) => {
+  shifts = {};
+  snapshot.forEach(docSnap => {
+    shifts[docSnap.id] = docSnap.data();
+  });
+  syncEl.textContent = '● Synced';
+  syncEl.className = 'sync-status online';
+  render();
+}, (err) => {
+  syncEl.textContent = '● Offline';
+  syncEl.className = 'sync-status offline';
+});
 
 document.getElementById('rate-input').addEventListener('input', function() {
   hourlyRate = parseFloat(this.value) || 12.1;
   render();
 });
-
-function saveShifts() {
-  try { localStorage.setItem('shifttracker_v1', JSON.stringify(shifts)); } catch(e) {}
-}
 
 function dateKey(y, m, d) {
   return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
@@ -176,7 +205,6 @@ function render() {
   const y = currentDate.getFullYear();
   const m = currentDate.getMonth();
   document.getElementById('month-label').textContent = MONTHS[m] + ' ' + y;
-
   document.getElementById('day-headers').innerHTML = DAYS.map(d => '<div class="day-header">' + d + '</div>').join('');
 
   const firstDow = new Date(y, m, 1).getDay();
@@ -252,28 +280,28 @@ document.getElementById('modal-cancel').addEventListener('click', function() {
   document.getElementById('modal').classList.add('hidden');
 });
 
-document.getElementById('modal-save').addEventListener('click', function() {
+document.getElementById('modal-save').addEventListener('click', async function() {
   const y = currentDate.getFullYear();
   const m = currentDate.getMonth();
   const key = dateKey(y, m, selectedDay);
-  shifts[key] = {
+  syncEl.textContent = '● Syncing...';
+  syncEl.className = 'sync-status syncing';
+  await setDoc(doc(db, 'shifts', key), {
     start: document.getElementById('start-time').value,
     end: document.getElementById('end-time').value,
     brk: parseInt(document.getElementById('break-mins').value) || 0
-  };
-  saveShifts();
+  });
   document.getElementById('modal').classList.add('hidden');
-  render();
 });
 
-document.getElementById('modal-delete').addEventListener('click', function() {
+document.getElementById('modal-delete').addEventListener('click', async function() {
   const y = currentDate.getFullYear();
   const m = currentDate.getMonth();
   const key = dateKey(y, m, selectedDay);
-  delete shifts[key];
-  saveShifts();
+  syncEl.textContent = '● Syncing...';
+  syncEl.className = 'sync-status syncing';
+  await deleteDoc(doc(db, 'shifts', key));
   document.getElementById('modal').classList.add('hidden');
-  render();
 });
 
 document.getElementById('prev-btn').addEventListener('click', function() {
