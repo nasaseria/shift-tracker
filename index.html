@@ -100,7 +100,7 @@
         <div class="stat-value green" id="stat-income">€0.00</div>
       </div>
       <div class="stat">
-        <div class="stat-label">Yearly estimate</div>
+        <div class="stat-label">Yearly total (actual)</div>
         <div class="stat-value green" id="stat-yearly">€0</div>
       </div>
     </div>
@@ -241,10 +241,23 @@ function render() {
   });
 
   const income = totalHours * hourlyRate;
+
+  // Calculate actual yearly total from ALL shifts across all months
+  let yearlyTotal = 0;
+  const currentYear = y;
+  Object.keys(shifts).forEach(key => {
+    const keyYear = parseInt(key.split('-')[0]);
+    if (keyYear === currentYear) {
+      const s = shifts[key];
+      const h = calcHours(s.start, s.end, s.brk);
+      yearlyTotal += h * hourlyRate;
+    }
+  });
+
   document.getElementById('stat-days').textContent = totalDays;
   document.getElementById('stat-hours').textContent = fmtHours(totalHours);
   document.getElementById('stat-income').textContent = '€' + income.toFixed(2);
-  document.getElementById('stat-yearly').textContent = '€' + Math.round(income * 12).toLocaleString();
+  document.getElementById('stat-yearly').textContent = '€' + yearlyTotal.toFixed(2);
 }
 
 function updatePreview() {
@@ -263,8 +276,11 @@ function openModal(day) {
   const m = currentDate.getMonth();
   const key = dateKey(y, m, day);
   const shift = shifts[key];
+  const dow = new Date(y, m, day).getDay(); // 0=Sun, 6=Sat
+  const isWeekend = dow === 0 || dow === 6;
+  const defaultStart = isWeekend ? '10:30' : '09:30';
   document.getElementById('modal-title').textContent = day + ' ' + MONTHS_SHORT[m] + ' ' + y;
-  document.getElementById('start-time').value = shift ? shift.start : '10:30';
+  document.getElementById('start-time').value = shift ? shift.start : defaultStart;
   document.getElementById('end-time').value = shift ? shift.end : '21:00';
   document.getElementById('break-mins').value = shift ? (shift.brk || 0) : 0;
   document.getElementById('modal-delete').style.display = shift ? 'inline-block' : 'none';
