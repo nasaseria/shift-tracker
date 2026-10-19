@@ -200,20 +200,26 @@ onSnapshot(shiftsCol, (snapshot) => {
   syncEl.className = 'sync-status offline';
 });
 
-// Load saved rate from Firebase
-const rateDocRef = doc(db, 'settings', 'hourlyRate');
-getDoc(rateDocRef).then((snap) => {
+// Load rate for current month from Firebase
+async function loadRateForMonth(y, m) {
+  const key = y + '-' + String(m+1).padStart(2,'0');
+  const snap = await getDoc(doc(db, 'rates', key));
   if (snap.exists()) {
     hourlyRate = snap.data().value || 12.1;
-    document.getElementById('rate-input').value = hourlyRate;
-    render();
+  } else {
+    hourlyRate = 12.1;
   }
-});
+  document.getElementById('rate-input').value = hourlyRate;
+  render();
+}
 
-// Save rate to Firebase when changed
+// Save rate for current month when changed
 document.getElementById('rate-input').addEventListener('change', async function() {
   hourlyRate = parseFloat(this.value) || 12.1;
-  await setDoc(rateDocRef, { value: hourlyRate });
+  const y = currentDate.getFullYear();
+  const m = currentDate.getMonth();
+  const key = y + '-' + String(m+1).padStart(2,'0');
+  await setDoc(doc(db, 'rates', key), { value: hourlyRate });
   render();
 });
 
@@ -283,21 +289,37 @@ function render() {
   });
 
   const income = totalHours * hourlyRate;
+
+  // Yearly total: load each month's rate from Firebase
   let yearlyTotal = 0;
   const currentYear = y;
+  const monthlyHours = {};
   Object.keys(shifts).forEach(key => {
-    const keyYear = parseInt(key.split('-')[0]);
+    const parts = key.split('-');
+    const keyYear = parseInt(parts[0]);
+    const keyMonth = parts[1]; // "01"–"12"
     if (keyYear === currentYear) {
       const s = shifts[key];
       const h = calcHours(s.start, s.end, s.brk);
-      yearlyTotal += h * hourlyRate;
+      const mk = keyYear + '-' + keyMonth;
+      monthlyHours[mk] = (monthlyHours[mk] || 0) + h;
     }
+  });
+
+  // Fetch all month rates then calculate
+  Promise.all(Object.keys(monthlyHours).map(async mk => {
+    const snap = await getDoc(doc(db, 'rates', mk));
+    const rate = snap.exists() ? (snap.data().value || 12.1) : 12.1;
+    return monthlyHours[mk] * rate;
+  })).then(earnings => {
+    yearlyTotal = earnings.reduce((a, b) => a + b, 0);
+    document.getElementById('stat-yearly').textContent = '€' + yearlyTotal.toFixed(2);
   });
 
   document.getElementById('stat-days').textContent = totalDays;
   document.getElementById('stat-hours').textContent = fmtHours(totalHours);
   document.getElementById('stat-income').textContent = '€' + income.toFixed(2);
-  document.getElementById('stat-yearly').textContent = '€' + yearlyTotal.toFixed(2);
+  document.getElementById('stat-yearly').textContent = '€…';
 }
 
 function updatePreview() {
@@ -362,12 +384,12 @@ document.getElementById('modal-delete').addEventListener('click', async function
 
 document.getElementById('prev-btn').addEventListener('click', function() {
   currentDate.setMonth(currentDate.getMonth() - 1);
-  render();
+  loadRateForMonth(currentDate.getFullYear(), currentDate.getMonth());
 });
 
 document.getElementById('next-btn').addEventListener('click', function() {
   currentDate.setMonth(currentDate.getMonth() + 1);
-  render();
+  loadRateForMonth(currentDate.getFullYear(), currentDate.getMonth());
 });
 
 // Bulk Import
@@ -428,7 +450,8 @@ document.getElementById('import-save').addEventListener('click', async function(
   }
 });
 
-render();
+// Load rate for current month on startup
+loadRateForMonth(currentDate.getFullYear(), currentDate.getMonth());
 </script>
 </body>
 </html>
