@@ -36,14 +36,14 @@
   .day-cell.today .day-num { color: #4ea3e0; }
   .shift-time { font-size: 11px; font-weight: 600; color: #e07050; margin-top: 2px; }
   .shift-earn { font-size: 10px; color: #4caf82; }
+  .import-btn { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: #aaa; font-size: 13px; cursor: pointer; margin-bottom: 1rem; }
+  .import-btn:hover { background: #222; color: #fff; }
   .summary { background: #161616; border-radius: 12px; border: 1px solid #2a2a2a; padding: 1rem; margin-bottom: 1rem; }
   .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .stat { background: #1c1c1c; border-radius: 8px; padding: 10px 12px; }
   .stat-label { font-size: 12px; color: #666; margin-bottom: 4px; }
   .stat-value { font-size: 20px; font-weight: 600; color: #eee; }
   .stat-value.green { color: #4caf82; }
-
-  /* Modal */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
   .modal-overlay.hidden { display: none; }
   .modal { background: #1a1a1a; border: 1px solid #333; border-radius: 14px; padding: 1.25rem; width: 100%; max-width: 300px; }
@@ -59,6 +59,11 @@
   .btn-cancel:hover { background: #222; }
   .btn-del { padding: 10px 14px; background: none; border: 1px solid #5a2020; border-radius: 8px; font-size: 13px; cursor: pointer; color: #c0504a; }
   .btn-del:hover { background: #2a1515; }
+  .import-modal { max-width: 340px; }
+  .import-modal textarea { width: 100%; background: #111; border: 1px solid #333; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px; font-family: monospace; resize: vertical; min-height: 160px; margin-bottom: 10px; }
+  .import-hint { font-size: 11px; color: #555; margin-bottom: 10px; line-height: 1.6; }
+  .import-result { font-size: 12px; color: #4caf82; text-align: center; margin-bottom: 8px; min-height: 18px; }
+  .import-result.error { color: #c0504a; }
 </style>
 </head>
 <body>
@@ -85,6 +90,8 @@
     <div class="cal-grid" id="cal-grid"></div>
   </div>
 
+  <button class="import-btn" id="import-btn">📋 Bulk Import Shifts</button>
+
   <div class="summary">
     <div class="summary-grid">
       <div class="stat">
@@ -107,6 +114,7 @@
   </div>
 </div>
 
+<!-- Shift Modal -->
 <div class="modal-overlay hidden" id="modal">
   <div class="modal">
     <h2 id="modal-title">Log shift</h2>
@@ -131,10 +139,30 @@
   </div>
 </div>
 
-<!-- Firebase -->
+<!-- Import Modal -->
+<div class="modal-overlay hidden" id="import-modal">
+  <div class="modal import-modal">
+    <h2>📋 Bulk Import Shifts</h2>
+    <div class="import-hint">
+      One shift per line in this format:<br>
+      <strong>YYYY-MM-DD HH:MM HH:MM</strong><br>
+      Example:<br>
+      2026-07-13 09:30 16:00<br>
+      2026-07-16 09:30 21:00<br>
+      2026-07-18 10:30 21:00
+    </div>
+    <textarea id="import-text" placeholder="2026-07-13 09:30 16:00&#10;2026-07-16 09:30 21:00"></textarea>
+    <div class="import-result" id="import-result"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="import-cancel">Cancel</button>
+      <button class="btn-save" id="import-save">Import All</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, deleteDoc, getDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB5e76meytTCnafoSWkKErB6JLpcV8dVOk",
@@ -160,19 +188,33 @@ let hourlyRate = 12.1;
 
 const syncEl = document.getElementById('sync-status');
 
-// Listen to Firestore in real time
 const shiftsCol = collection(db, 'shifts');
 onSnapshot(shiftsCol, (snapshot) => {
   shifts = {};
-  snapshot.forEach(docSnap => {
-    shifts[docSnap.id] = docSnap.data();
-  });
+  snapshot.forEach(docSnap => { shifts[docSnap.id] = docSnap.data(); });
   syncEl.textContent = '● Synced';
   syncEl.className = 'sync-status online';
   render();
-}, (err) => {
+}, () => {
   syncEl.textContent = '● Offline';
   syncEl.className = 'sync-status offline';
+});
+
+// Load saved rate from Firebase
+const rateDocRef = doc(db, 'settings', 'hourlyRate');
+getDoc(rateDocRef).then((snap) => {
+  if (snap.exists()) {
+    hourlyRate = snap.data().value || 12.1;
+    document.getElementById('rate-input').value = hourlyRate;
+    render();
+  }
+});
+
+// Save rate to Firebase when changed
+document.getElementById('rate-input').addEventListener('change', async function() {
+  hourlyRate = parseFloat(this.value) || 12.1;
+  await setDoc(rateDocRef, { value: hourlyRate });
+  render();
 });
 
 document.getElementById('rate-input').addEventListener('input', function() {
@@ -241,8 +283,6 @@ function render() {
   });
 
   const income = totalHours * hourlyRate;
-
-  // Calculate actual yearly total from ALL shifts across all months
   let yearlyTotal = 0;
   const currentYear = y;
   Object.keys(shifts).forEach(key => {
@@ -276,7 +316,7 @@ function openModal(day) {
   const m = currentDate.getMonth();
   const key = dateKey(y, m, day);
   const shift = shifts[key];
-  const dow = new Date(y, m, day).getDay(); // 0=Sun, 6=Sat
+  const dow = new Date(y, m, day).getDay();
   const isWeekend = dow === 0 || dow === 6;
   const defaultStart = isWeekend ? '10:30' : '09:30';
   document.getElementById('modal-title').textContent = day + ' ' + MONTHS_SHORT[m] + ' ' + y;
@@ -328,6 +368,64 @@ document.getElementById('prev-btn').addEventListener('click', function() {
 document.getElementById('next-btn').addEventListener('click', function() {
   currentDate.setMonth(currentDate.getMonth() + 1);
   render();
+});
+
+// Bulk Import
+document.getElementById('import-btn').addEventListener('click', function() {
+  document.getElementById('import-text').value = '';
+  document.getElementById('import-result').textContent = '';
+  document.getElementById('import-modal').classList.remove('hidden');
+});
+
+document.getElementById('import-cancel').addEventListener('click', function() {
+  document.getElementById('import-modal').classList.add('hidden');
+});
+
+document.getElementById('import-save').addEventListener('click', async function() {
+  const lines = document.getElementById('import-text').value.trim().split('\n');
+  const resultEl = document.getElementById('import-result');
+  const batch = writeBatch(db);
+  let count = 0;
+  let errors = [];
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) continue;
+    const parts = line.split(/\s+/);
+    if (parts.length < 3) { errors.push(line); continue; }
+    const dateStr = parts[0]; // YYYY-MM-DD
+    const start = parts[1];   // HH:MM
+    const end = parts[2];     // HH:MM
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || !/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) {
+      errors.push(line); continue;
+    }
+    const docRef = doc(db, 'shifts', dateStr);
+    batch.set(docRef, { start: start, end: end, brk: 0 });
+    count++;
+  }
+
+  if (count === 0) {
+    resultEl.textContent = 'No valid shifts found!';
+    resultEl.className = 'import-result error';
+    return;
+  }
+
+  try {
+    syncEl.textContent = '● Syncing...';
+    syncEl.className = 'sync-status syncing';
+    await batch.commit();
+    resultEl.textContent = '✅ ' + count + ' shift(s) imported successfully!';
+    resultEl.className = 'import-result';
+    if (errors.length > 0) {
+      resultEl.textContent += ' (' + errors.length + ' lines skipped)';
+    }
+    setTimeout(() => {
+      document.getElementById('import-modal').classList.add('hidden');
+    }, 1500);
+  } catch (e) {
+    resultEl.textContent = 'Error saving shifts. Check your connection.';
+    resultEl.className = 'import-result error';
+  }
 });
 
 render();
