@@ -5,99 +5,163 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shift Tracker</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #eee; min-height: 100vh; padding: 1rem; }
-  .app { max-width: 420px; margin: 0 auto; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #eee; min-height: 100vh; padding: 1rem; }
+.app { max-width: 420px; margin: 0 auto; }
+.hidden { display: none !important; }
 
-  /* Login Screen */
-  .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; gap: 1.5rem; }
-  .login-screen h1 { font-size: 26px; font-weight: 700; color: #fff; }
-  .login-screen p { font-size: 14px; color: #666; text-align: center; line-height: 1.6; }
-  .btn-google { display: flex; align-items: center; gap: 10px; background: #fff; color: #333; border: none; border-radius: 10px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; }
-  .btn-google:hover { background: #f0f0f0; }
-  .btn-google img { width: 20px; height: 20px; }
+.login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; gap: 1.5rem; }
+.login-screen h1 { font-size: 26px; font-weight: 700; color: #fff; }
+.login-screen p { font-size: 14px; color: #666; text-align: center; line-height: 1.6; }
+.btn-google { display: flex; align-items: center; gap: 10px; background: #fff; color: #333; border: none; border-radius: 10px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.btn-google:hover { background: #f0f0f0; }
+.btn-google img { width: 20px; height: 20px; }
 
-  /* Main App */
-  .main-app { display: none; }
-  .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-  .app-title { font-size: 18px; font-weight: 600; color: #fff; }
-  .user-info { display: flex; align-items: center; gap: 8px; }
-  .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #333; }
-  .btn-signout { font-size: 11px; color: #666; background: none; border: 1px solid #333; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
-  .btn-signout:hover { color: #c0504a; border-color: #5a2020; }
-  .rate-sync-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-  .rate-row { display: flex; align-items: center; gap: 8px; }
-  .rate-row label { font-size: 13px; color: #aaa; }
-  .rate-row input { width: 80px; background: #222; border: 1px solid #333; border-radius: 8px; padding: 5px 8px; color: #fff; font-size: 13px; text-align: center; }
-  .sync-status { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
-  .sync-status.online { background: #0d2215; color: #4caf82; }
-  .sync-status.offline { background: #2a1515; color: #c0504a; }
-  .sync-status.syncing { background: #1a1a0d; color: #c8a832; }
-  .month-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
-  .nav-btn { background: #222; border: 1px solid #333; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 18px; color: #eee; }
-  .nav-btn:hover { background: #333; }
-  .month-label { font-size: 17px; font-weight: 600; flex: 1; text-align: center; color: #fff; }
-  .calendar { border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
-  .day-headers { display: grid; grid-template-columns: repeat(7, 1fr); background: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
-  .day-header { font-size: 11px; font-weight: 600; color: #666; text-align: center; padding: 7px 0; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-  .day-cell { min-height: 62px; border: 0.5px solid #1e1e1e; padding: 4px 5px; cursor: pointer; background: #161616; transition: background 0.12s; }
-  .day-cell:hover { background: #1f1f1f; }
-  .day-cell.empty { background: #111; cursor: default; }
-  .day-cell.today { background: #0d2233; }
-  .day-cell.today:hover { background: #122d45; }
-  .day-cell.has-shift { background: #0d2215; }
-  .day-cell.has-shift:hover { background: #122b1c; }
-  .day-num { font-size: 12px; color: #555; font-weight: 500; }
-  .day-cell.today .day-num { color: #4ea3e0; }
-  .shift-time { font-size: 11px; font-weight: 600; color: #e07050; margin-top: 2px; }
-  .shift-earn { font-size: 10px; color: #4caf82; }
-  .import-btn { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: #aaa; font-size: 13px; cursor: pointer; margin-bottom: 1rem; }
-  .import-btn:hover { background: #222; color: #fff; }
-  .summary { background: #161616; border-radius: 12px; border: 1px solid #2a2a2a; padding: 1rem; margin-bottom: 1rem; }
-  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stat { background: #1c1c1c; border-radius: 8px; padding: 10px 12px; }
-  .stat-label { font-size: 12px; color: #666; margin-bottom: 4px; }
-  .stat-value { font-size: 20px; font-weight: 600; color: #eee; }
-  .stat-value.green { color: #4caf82; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
-  .modal-overlay.hidden { display: none; }
-  .modal { background: #1a1a1a; border: 1px solid #333; border-radius: 14px; padding: 1.25rem; width: 100%; max-width: 300px; }
-  .modal h2 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 1rem; }
-  .field { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .field label { font-size: 13px; color: #aaa; }
-  .field input { background: #111; border: 1px solid #333; border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 14px; width: 130px; text-align: center; }
-  .hours-preview { background: #111; border-radius: 8px; padding: 8px; font-size: 13px; color: #4caf82; text-align: center; margin-bottom: 1rem; font-weight: 500; }
-  .modal-actions { display: flex; gap: 8px; }
-  .btn-save { flex: 1; padding: 10px; background: #1D9E75; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
-  .btn-save:hover { background: #179068; }
-  .btn-cancel { padding: 10px 14px; background: none; border: 1px solid #333; border-radius: 8px; font-size: 13px; cursor: pointer; color: #aaa; }
-  .btn-cancel:hover { background: #222; }
-  .btn-del { padding: 10px 14px; background: none; border: 1px solid #5a2020; border-radius: 8px; font-size: 13px; cursor: pointer; color: #c0504a; }
-  .btn-del:hover { background: #2a1515; }
-  .import-modal { max-width: 340px; }
-  .import-modal textarea { width: 100%; background: #111; border: 1px solid #333; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px; font-family: monospace; resize: vertical; min-height: 160px; margin-bottom: 10px; }
-  .import-hint { font-size: 11px; color: #555; margin-bottom: 10px; line-height: 1.6; }
-  .import-result { font-size: 12px; color: #4caf82; text-align: center; margin-bottom: 8px; min-height: 18px; }
-  .import-result.error { color: #c0504a; }
+.top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.app-title { font-size: 18px; font-weight: 600; color: #fff; }
+.user-info { display: flex; align-items: center; gap: 8px; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #333; }
+.btn-signout { font-size: 11px; color: #666; background: none; border: 1px solid #333; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+.btn-signout:hover { color: #c0504a; border-color: #5a2020; }
+
+.controls-row { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.rate-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rate-row label { font-size: 13px; color: #aaa; }
+.rate-row input { width: 80px; background: #222; border: 1px solid #333; border-radius: 8px; padding: 5px 8px; color: #fff; font-size: 13px; text-align: center; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle-label { font-size: 12px; color: #aaa; }
+.toggle-btn { width: 36px; height: 20px; border-radius: 10px; background: #333; border: none; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
+.toggle-btn::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: left 0.2s; }
+.toggle-btn.on { background: #1D9E75; }
+.toggle-btn.on::after { left: 18px; }
+.sync-status { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.sync-status.online { background: #0d2215; color: #4caf82; }
+.sync-status.offline { background: #2a1515; color: #c0504a; }
+.sync-status.syncing { background: #1a1a0d; color: #c8a832; }
+
+.gcal-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a2a; }
+.gcal-status { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 6px; }
+.gcal-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
+.gcal-dot.connected { background: #4caf82; }
+.btn-gcal { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #333; background: none; color: #4ea3e0; cursor: pointer; }
+.btn-gcal:hover { background: #0d2233; }
+.btn-gcal.connected { color: #c0504a; border-color: #5a2020; }
+.btn-gcal.connected:hover { background: #2a1515; }
+
+.month-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+.nav-btn { background: #222; border: 1px solid #333; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 18px; color: #eee; }
+.nav-btn:hover { background: #333; }
+.month-label { font-size: 17px; font-weight: 600; flex: 1; text-align: center; color: #fff; }
+
+.calendar { border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
+.day-headers { display: grid; grid-template-columns: repeat(7, 1fr); background: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
+.day-header { font-size: 11px; font-weight: 600; color: #666; text-align: center; padding: 7px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.day-cell { min-height: 62px; border: 0.5px solid #1e1e1e; padding: 3px 4px; cursor: pointer; background: #161616; transition: background 0.12s; overflow: hidden; }
+.day-cell:hover { background: #1f1f1f; }
+.day-cell.empty { background: #111; cursor: default; }
+.day-cell.today { background: #0d2233; }
+.day-cell.today:hover { background: #122d45; }
+.day-cell.has-shift { background: #0d2215; }
+.day-cell.has-shift:hover { background: #122b1c; }
+.day-cell.multi-shift { background: #1a1a0d; }
+.day-cell.multi-shift:hover { background: #222210; }
+.day-cell.synced-gcal { outline: 1px solid #4caf82; outline-offset: -1px; }
+.day-num { font-size: 11px; color: #555; font-weight: 500; }
+.day-cell.today .day-num { color: #4ea3e0; }
+.shift-entry { margin-top: 1px; }
+.shift-time { font-size: 9px; font-weight: 600; color: #e07050; line-height: 1.3; }
+.shift-earn { font-size: 9px; color: #4caf82; }
+.shift-earn.alt { color: #c8a832; }
+.shift-divider { border: none; border-top: 0.5px solid #2a2a2a; margin: 2px 0; }
+.day-total { font-size: 9px; color: #888; margin-top: 1px; }
+
+.action-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.action-btn { flex: 1; padding: 9px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: #aaa; font-size: 12px; cursor: pointer; }
+.action-btn:hover { background: #222; color: #fff; }
+
+.export-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+.exp-btn { flex: 1; padding: 8px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #aaa; font-size: 11px; cursor: pointer; }
+.exp-btn:hover { background: #222; color: #fff; }
+.exp-btn.gcal-sync { border-color: #185FA5; color: #4ea3e0; }
+.exp-btn.gcal-sync:hover { background: #0d2233; }
+.exp-btn.gcal-sync:disabled { opacity: 0.5; cursor: default; }
+
+.summary { background: #161616; border-radius: 12px; border: 1px solid #2a2a2a; padding: 1rem; margin-bottom: 1rem; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.stat { background: #1c1c1c; border-radius: 8px; padding: 10px 12px; }
+.stat-label { font-size: 12px; color: #666; margin-bottom: 4px; }
+.stat-value { font-size: 20px; font-weight: 600; color: #eee; }
+.stat-value.green { color: #4caf82; }
+.workplace-breakdown { margin-top: 8px; border-top: 1px solid #2a2a2a; padding-top: 8px; }
+.wb-title { font-size: 11px; color: #555; margin-bottom: 6px; font-weight: 500; }
+.wb-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 0.5px solid #1e1e1e; }
+.wb-row:last-child { border-bottom: none; }
+.wb-name { font-size: 11px; color: #888; display: flex; align-items: center; gap: 6px; }
+.wb-hours { font-size: 11px; color: #aaa; }
+.wb-earn { font-size: 11px; color: #4caf82; font-weight: 500; }
+.wb-total { display: flex; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid #333; }
+.wb-total-label { font-size: 12px; font-weight: 500; color: #eee; }
+.wb-total-val { font-size: 12px; font-weight: 500; color: #4caf82; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+.modal-overlay.hidden { display: none; }
+.modal { background: #1a1a1a; border: 1px solid #333; border-radius: 14px; padding: 1.25rem; width: 100%; max-width: 320px; max-height: 90vh; overflow-y: auto; }
+.modal h2 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 1rem; }
+.field { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.field label { font-size: 13px; color: #aaa; }
+.field input, .field select { background: #111; border: 1px solid #333; border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 14px; width: 140px; text-align: center; }
+.field select { text-align: left; }
+.hours-preview { background: #111; border-radius: 8px; padding: 8px; font-size: 13px; color: #4caf82; text-align: center; margin-bottom: 10px; font-weight: 500; }
+.day-total-preview { font-size: 12px; color: #c8a832; text-align: center; margin-bottom: 10px; }
+.shift-block { background: #111; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px; margin-bottom: 10px; position: relative; }
+.shift-block-title { font-size: 11px; color: #555; margin-bottom: 8px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.btn-remove-shift { background: none; border: none; color: #c0504a; cursor: pointer; font-size: 14px; padding: 0; }
+.btn-add-shift { width: 100%; padding: 8px; background: none; border: 1px dashed #333; border-radius: 8px; color: #4ea3e0; font-size: 12px; cursor: pointer; margin-bottom: 10px; }
+.btn-add-shift:hover { border-color: #4ea3e0; background: #0d2233; }
+.gcal-checkbox { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; color: #aaa; cursor: pointer; }
+.gcal-checkbox input { width: 14px; height: 14px; cursor: pointer; }
+.modal-actions { display: flex; gap: 8px; }
+.btn-save { flex: 1; padding: 10px; background: #1D9E75; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
+.btn-save:hover { background: #179068; }
+.btn-cancel { padding: 10px 14px; background: none; border: 1px solid #333; border-radius: 8px; font-size: 13px; cursor: pointer; color: #aaa; }
+.btn-cancel:hover { background: #222; }
+.btn-del { padding: 10px 14px; background: none; border: 1px solid #5a2020; border-radius: 8px; font-size: 13px; cursor: pointer; color: #c0504a; }
+.btn-del:hover { background: #2a1515; }
+
+.import-modal { max-width: 340px; }
+.import-modal textarea { width: 100%; background: #111; border: 1px solid #333; border-radius: 8px; padding: 8px; color: #fff; font-size: 12px; font-family: monospace; resize: vertical; min-height: 140px; margin-bottom: 10px; }
+.import-hint { font-size: 11px; color: #555; margin-bottom: 10px; line-height: 1.6; }
+.import-result { font-size: 12px; color: #4caf82; text-align: center; margin-bottom: 8px; min-height: 18px; }
+.import-result.error { color: #c0504a; }
+
+.wp-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 10px; background: #111; border-radius: 8px; border: 1px solid #2a2a2a; }
+.wp-color { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.wp-name { flex: 1; font-size: 13px; color: #eee; }
+.wp-rate { font-size: 12px; color: #aaa; }
+.wp-del { background: none; border: none; color: #c0504a; cursor: pointer; font-size: 16px; padding: 0 4px; }
+.wp-form { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.wp-form input { flex: 1; min-width: 80px; background: #111; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #fff; font-size: 13px; }
+.wp-form button { padding: 7px 14px; background: #1D9E75; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+
+.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #1D9E75; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.toast.error { background: #A32D2D; }
 </style>
 </head>
 <body>
 <div class="app">
-
-  <!-- Login Screen -->
-  <div class="login-screen" id="login-screen">
+  <div id="login-screen" class="login-screen">
     <div style="font-size:48px;">⏱️</div>
     <h1>Shift Tracker</h1>
-    <p>Track your work shifts and earnings.<br>Sign in to save your data.</p>
+    <p>Track shifts and earnings across multiple workplaces.<br>Sign in to save your data.</p>
     <button class="btn-google" id="btn-google-login">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
       Sign in with Google
     </button>
   </div>
 
-  <!-- Main App -->
-  <div class="main-app" id="main-app">
+  <div id="main-app" class="hidden">
     <div class="top-row">
       <span class="app-title">Shift Tracker</span>
       <div class="user-info">
@@ -105,12 +169,24 @@
         <button class="btn-signout" id="btn-signout">Sign out</button>
       </div>
     </div>
-    <div class="rate-sync-row">
+
+    <div class="controls-row">
       <div class="rate-row">
-        <label>€/hr</label>
+        <label>Default €/hr</label>
         <input type="number" id="rate-input" value="12.1" step="0.1" min="0">
+        <span class="sync-status syncing" id="sync-status">Connecting...</span>
       </div>
-      <span class="sync-status syncing" id="sync-status">Connecting...</span>
+      <div class="toggle-row">
+        <span class="toggle-label">Multiple rates / workplaces this month</span>
+        <button class="toggle-btn" id="multi-toggle"></button>
+      </div>
+      <div class="gcal-row">
+        <div class="gcal-status">
+          <div class="gcal-dot" id="gcal-dot"></div>
+          <span id="gcal-status-text">Google Calendar: not connected</span>
+        </div>
+        <button class="btn-gcal" id="btn-gcal-connect">Connect</button>
+      </div>
     </div>
 
     <div class="month-nav">
@@ -124,45 +200,57 @@
       <div class="cal-grid" id="cal-grid"></div>
     </div>
 
-    <div style="display:flex;gap:8px;margin-bottom:1rem;">
-      <button class="import-btn" id="import-btn" style="margin-bottom:0;">📋 Import Shifts</button>
-      <button class="import-btn" id="export-btn" style="margin-bottom:0;">💾 Export Shifts</button>
+    <div class="action-row">
+      <button class="action-btn" id="import-btn">📋 Import</button>
+      <button class="action-btn" id="export-txt-btn">💾 Export</button>
+      <button class="action-btn" id="wp-manage-btn">🏢 Workplaces</button>
+    </div>
+
+    <div class="export-row">
+      <button class="exp-btn gcal-sync" id="sync-gcal-btn">📅 Sync to Google Cal</button>
+      <button class="exp-btn" id="export-ics-btn">📅 Export .ics</button>
+    </div>
+    <div class="export-row">
+      <button class="exp-btn" id="export-sheets-btn">📊 Google Sheets</button>
+      <button class="exp-btn" id="export-pdf-btn">📄 PDF Report</button>
     </div>
 
     <div class="summary">
       <div class="summary-grid">
-        <div class="stat">
-          <div class="stat-label">Days worked</div>
-          <div class="stat-value" id="stat-days">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Hours this month</div>
-          <div class="stat-value" id="stat-hours">0:00</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Monthly income</div>
-          <div class="stat-value green" id="stat-income">€0.00</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Yearly total (actual)</div>
-          <div class="stat-value green" id="stat-yearly">€0.00</div>
+        <div class="stat"><div class="stat-label">Days worked</div><div class="stat-value" id="stat-days">0</div></div>
+        <div class="stat"><div class="stat-label">Hours this month</div><div class="stat-value" id="stat-hours">0:00</div></div>
+        <div class="stat"><div class="stat-label">Monthly income</div><div class="stat-value green" id="stat-income">€0.00</div></div>
+        <div class="stat"><div class="stat-label">Yearly total</div><div class="stat-value green" id="stat-yearly">€0.00</div></div>
+      </div>
+      <div class="workplace-breakdown hidden" id="wp-breakdown">
+        <div class="wb-title">Breakdown by workplace</div>
+        <div id="wb-rows"></div>
+        <div class="wb-total">
+          <span class="wb-total-label">Total</span>
+          <span class="wb-total-val" id="wb-total-val">€0.00</span>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <!-- Shift Modal -->
 <div class="modal-overlay hidden" id="modal">
   <div class="modal">
     <h2 id="modal-title">Log shift</h2>
-    <div class="field"><label>Start</label><input type="time" id="start-time" value="10:30"></div>
-    <div class="field"><label>Finish</label><input type="time" id="end-time" value="21:00"></div>
-    <div class="field"><label>Break (mins)</label><input type="number" id="break-mins" value="0" min="0" max="480"></div>
-    <div class="hours-preview" id="hours-preview">— hrs  •  €—</div>
+    <div id="shift-blocks"></div>
+    <button class="btn-add-shift hidden" id="btn-add-shift">+ Add another shift</button>
+    <div class="day-total-preview hidden" id="day-total-preview"></div>
+    <div class="hours-preview hidden" id="hours-preview"></div>
+    <label class="gcal-checkbox hidden" id="gcal-checkbox-wrap">
+      <input type="checkbox" id="gcal-auto-sync" checked>
+      Also add to Google Calendar
+    </label>
     <div class="modal-actions">
       <button class="btn-cancel" id="modal-cancel">Cancel</button>
-      <button class="btn-del" id="modal-delete" style="display:none;">Delete</button>
+      <button class="btn-del hidden" id="modal-delete">Delete</button>
       <button class="btn-save" id="modal-save">Save</button>
     </div>
   </div>
@@ -171,12 +259,8 @@
 <!-- Import Modal -->
 <div class="modal-overlay hidden" id="import-modal">
   <div class="modal import-modal">
-    <h2>📋 Bulk Import Shifts</h2>
-    <div class="import-hint">
-      One shift per line:<br>
-      <strong>YYYY-MM-DD HH:MM HH:MM</strong><br>
-      Example: 2026-10-05 09:30 16:00
-    </div>
+    <h2>📋 Bulk Import</h2>
+    <div class="import-hint">One shift per line:<br><strong>YYYY-MM-DD HH:MM HH:MM</strong><br>Example: 2026-10-05 09:30 16:00</div>
     <textarea id="import-text" placeholder="2026-10-05 09:30 16:00&#10;2026-10-08 10:00 21:00"></textarea>
     <div class="import-result" id="import-result"></div>
     <div class="modal-actions">
@@ -186,9 +270,25 @@
   </div>
 </div>
 
+<!-- Workplace Modal -->
+<div class="modal-overlay hidden" id="wp-modal">
+  <div class="modal">
+    <h2>🏢 Manage Workplaces</h2>
+    <div id="wp-list"></div>
+    <div class="wp-form">
+      <input type="text" id="wp-name-input" placeholder="Workplace name">
+      <input type="number" id="wp-rate-input" placeholder="€/hr" style="width:80px;">
+      <button id="wp-add-btn">Add</button>
+    </div>
+    <div style="margin-top:12px;">
+      <button class="btn-cancel" id="wp-close">Close</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, deleteDoc, getDoc, onSnapshot, collection, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, deleteDoc, getDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -203,310 +303,456 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WP_COLORS=['#4caf82','#4ea3e0','#e07050','#c8a832','#b07ad6','#e05090'];
+
+let currentDate=new Date(); currentDate.setDate(1);
+let shifts={}, selectedDay=null, hourlyRate=12.1, multiMode=false;
+let currentUser=null, unsubShifts=null, workplaces=[], gcalToken=null;
+
+const syncEl=document.getElementById('sync-status');
+const multiToggle=document.getElementById('multi-toggle');
+
+// Toast
+function showToast(msg, isError=false) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(isError?' error':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Auth
 const provider = new GoogleAuthProvider();
+provider.addScope('https://www.googleapis.com/auth/calendar.events');
 
-const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-let currentDate = new Date(); currentDate.setDate(1);
-let shifts = {};
-let selectedDay = null;
-let hourlyRate = 12.1;
-let currentUser = null;
-let unsubscribeShifts = null;
-const syncEl = document.getElementById('sync-status');
-
-// Auth state
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUser = user;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main-app').style.display = 'block';
-    document.getElementById('user-avatar').src = user.photoURL || '';
+onAuthStateChanged(auth, async user => {
+  if(user) {
+    currentUser=user;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    document.getElementById('user-avatar').src=user.photoURL||'';
+    await loadWorkplaces();
     subscribeShifts();
-    loadRateForMonth(currentDate.getFullYear(), currentDate.getMonth());
+    loadMonthSettings(currentDate.getFullYear(),currentDate.getMonth());
+    loadGcalToken();
   } else {
-    currentUser = null;
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
-    if (unsubscribeShifts) { unsubscribeShifts(); unsubscribeShifts = null; }
+    currentUser=null;
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('main-app').classList.add('hidden');
+    if(unsubShifts){unsubShifts();unsubShifts=null;}
   }
 });
 
-// Google Sign In
-document.getElementById('btn-google-login').addEventListener('click', async () => {
-  try { await signInWithPopup(auth, provider); } catch(e) { console.error(e); }
+document.getElementById('btn-google-login').addEventListener('click', async()=>{
+  try { await signInWithPopup(auth,provider); } catch(e){ console.error(e); }
+});
+document.getElementById('btn-signout').addEventListener('click', ()=>signOut(auth));
+
+// Google Calendar OAuth
+function loadGcalToken() {
+  const t=localStorage.getItem('gcal_token');
+  const exp=localStorage.getItem('gcal_token_exp');
+  if(t && exp && Date.now()<parseInt(exp)) {
+    gcalToken=t; updateGcalUI(true);
+  } else {
+    gcalToken=null; updateGcalUI(false);
+  }
+}
+
+function updateGcalUI(connected) {
+  const dot=document.getElementById('gcal-dot');
+  const txt=document.getElementById('gcal-status-text');
+  const btn=document.getElementById('btn-gcal-connect');
+  const cbWrap=document.getElementById('gcal-checkbox-wrap');
+  if(connected) {
+    dot.classList.add('connected');
+    txt.textContent='Google Calendar: connected';
+    btn.textContent='Disconnect';
+    btn.classList.add('connected');
+    cbWrap.classList.remove('hidden');
+  } else {
+    dot.classList.remove('connected');
+    txt.textContent='Google Calendar: not connected';
+    btn.textContent='Connect';
+    btn.classList.remove('connected');
+    cbWrap.classList.add('hidden');
+  }
+}
+
+document.getElementById('btn-gcal-connect').addEventListener('click', async()=>{
+  if(gcalToken) {
+    gcalToken=null;
+    localStorage.removeItem('gcal_token');
+    localStorage.removeItem('gcal_token_exp');
+    updateGcalUI(false);
+    showToast('Google Calendar disconnected');
+    return;
+  }
+  try {
+    const gcalProvider=new GoogleAuthProvider();
+    gcalProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+    const result=await signInWithPopup(auth,gcalProvider);
+    const credential=GoogleAuthProvider.credentialFromResult(result);
+    gcalToken=credential.accessToken;
+    localStorage.setItem('gcal_token',gcalToken);
+    localStorage.setItem('gcal_token_exp',Date.now()+3500000);
+    updateGcalUI(true);
+    showToast('✅ Google Calendar connected!');
+  } catch(e) {
+    showToast('Failed to connect Google Calendar', true);
+    console.error(e);
+  }
 });
 
-// Sign Out
-document.getElementById('btn-signout').addEventListener('click', async () => {
-  await signOut(auth);
+// Add event to Google Calendar
+async function addToGcal(dateStr, shiftList, title='Work Shift') {
+  if(!gcalToken) return false;
+  const [y,mo,d]=dateStr.split('-');
+  for(const s of shiftList) {
+    const summary = s.wp ? 'Work - '+s.wp : title;
+    const h=calcHours(s.start,s.end,s.brk||0);
+    const earn=(h*(s.rate||hourlyRate)).toFixed(2);
+    const startDT=`${y}-${mo}-${d}T${s.start}:00`;
+    const endDT=`${y}-${mo}-${d}T${s.end}:00`;
+    await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+gcalToken,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        summary,
+        description:`${fmtH(h)} hrs • €${earn}`,
+        start:{dateTime:startDT,timeZone:'Europe/Helsinki'},
+        end:{dateTime:endDT,timeZone:'Europe/Helsinki'},
+        reminders:{useDefault:false,overrides:[{method:'popup',minutes:15}]}
+      })
+    });
+  }
+  return true;
+}
+
+// Sync whole month to Google Calendar
+document.getElementById('sync-gcal-btn').addEventListener('click', async()=>{
+  if(!gcalToken){showToast('Connect Google Calendar first',true);return;}
+  const y=currentDate.getFullYear(),m=currentDate.getMonth();
+  const monthKey=y+'-'+String(m+1).padStart(2,'0');
+  const monthShifts=Object.keys(shifts).filter(k=>k.startsWith(monthKey));
+  if(!monthShifts.length){showToast('No shifts this month',true);return;}
+  showToast('Syncing to Google Calendar...');
+  let count=0;
+  for(const k of monthShifts) {
+    const d=shifts[k];
+    const sl=Array.isArray(d.shifts)?d.shifts:[{start:d.start,end:d.end,brk:d.brk||0,rate:d.rate||hourlyRate,wp:d.wp||''}];
+    await addToGcal(k,sl);
+    count++;
+  }
+  showToast('✅ Synced '+count+' days to Google Calendar!');
 });
 
-// Subscribe to user's shifts
+// Firebase shifts
 function subscribeShifts() {
-  if (!currentUser) return;
-  if (unsubscribeShifts) unsubscribeShifts();
-  const shiftsCol = collection(db, 'users', currentUser.uid, 'shifts');
-  unsubscribeShifts = onSnapshot(shiftsCol, (snapshot) => {
-    shifts = {};
-    snapshot.forEach(d => { shifts[d.id] = d.data(); });
-    syncEl.textContent = '● Synced';
-    syncEl.className = 'sync-status online';
+  if(!currentUser)return;
+  if(unsubShifts)unsubShifts();
+  unsubShifts=onSnapshot(collection(db,'users',currentUser.uid,'shifts'),snap=>{
+    shifts={};
+    snap.forEach(d=>{shifts[d.id]=d.data();});
+    syncEl.textContent='● Synced'; syncEl.className='sync-status online';
     render();
-  }, () => {
-    syncEl.textContent = '● Offline';
-    syncEl.className = 'sync-status offline';
-  });
+  },()=>{syncEl.textContent='● Offline';syncEl.className='sync-status offline';});
 }
 
-// Rate per month
-async function loadRateForMonth(y, m) {
-  if (!currentUser) return;
-  const key = y + '-' + String(m+1).padStart(2,'0');
-  const snap = await getDoc(doc(db, 'users', currentUser.uid, 'rates', key));
-  hourlyRate = snap.exists() ? (snap.data().value || 12.1) : 12.1;
-  document.getElementById('rate-input').value = hourlyRate;
-  render();
+async function loadWorkplaces() {
+  if(!currentUser)return;
+  const snap=await getDoc(doc(db,'users',currentUser.uid,'settings','workplaces'));
+  workplaces=snap.exists()?(snap.data().list||[]):[];
+}
+async function saveWorkplaces() {
+  if(!currentUser)return;
+  await setDoc(doc(db,'users',currentUser.uid,'settings','workplaces'),{list:workplaces});
 }
 
-document.getElementById('rate-input').addEventListener('change', async function() {
-  if (!currentUser) return;
-  hourlyRate = parseFloat(this.value) || 12.1;
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-  const key = y + '-' + String(m+1).padStart(2,'0');
-  await setDoc(doc(db, 'users', currentUser.uid, 'rates', key), { value: hourlyRate });
+async function loadMonthSettings(y,m) {
+  if(!currentUser)return;
+  const key=y+'-'+String(m+1).padStart(2,'0');
+  const snap=await getDoc(doc(db,'users',currentUser.uid,'rates',key));
+  if(snap.exists()){const d=snap.data();hourlyRate=d.rate||12.1;multiMode=d.multiMode||false;}
+  else{hourlyRate=12.1;multiMode=false;}
+  document.getElementById('rate-input').value=hourlyRate;
+  multiToggle.classList.toggle('on',multiMode);
+  document.getElementById('wp-breakdown').classList.toggle('hidden',!multiMode);
   render();
+}
+async function saveMonthSettings() {
+  if(!currentUser)return;
+  const y=currentDate.getFullYear(),m=currentDate.getMonth();
+  await setDoc(doc(db,'users',currentUser.uid,'rates',y+'-'+String(m+1).padStart(2,'0')),{rate:hourlyRate,multiMode});
+}
+
+multiToggle.addEventListener('click',()=>{
+  multiMode=!multiMode;
+  multiToggle.classList.toggle('on',multiMode);
+  document.getElementById('wp-breakdown').classList.toggle('hidden',!multiMode);
+  saveMonthSettings(); render();
 });
+document.getElementById('rate-input').addEventListener('change',function(){hourlyRate=parseFloat(this.value)||12.1;saveMonthSettings();render();});
+document.getElementById('rate-input').addEventListener('input',function(){hourlyRate=parseFloat(this.value)||12.1;render();});
 
-document.getElementById('rate-input').addEventListener('input', function() {
-  hourlyRate = parseFloat(this.value) || 12.1;
-  render();
-});
-
-function dateKey(y, m, d) {
-  return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-}
-function timeToMins(t) {
-  const p = t.split(':'); return parseInt(p[0])*60 + parseInt(p[1]);
-}
-function calcHours(start, end, brk) {
-  let mins = timeToMins(end) - timeToMins(start) - (brk||0);
-  if (mins < 0) mins += 24*60;
-  return Math.max(0, mins/60);
-}
-function fmtHours(h) {
-  const hrs = Math.floor(h);
-  const mins = Math.round((h-hrs)*60);
-  return hrs + ':' + String(mins).padStart(2,'0');
-}
+function dateKey(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function timeToMins(t){const p=t.split(':');return parseInt(p[0])*60+parseInt(p[1]);}
+function calcHours(s,e,b=0){let m=timeToMins(e)-timeToMins(s)-(b||0);if(m<0)m+=1440;return Math.max(0,m/60);}
+function fmtH(h){return Math.floor(h)+':'+String(Math.round((h%1)*60)).padStart(2,'0');}
 
 function render() {
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-  document.getElementById('month-label').textContent = MONTHS[m] + ' ' + y;
-  document.getElementById('day-headers').innerHTML = DAYS.map(d => '<div class="day-header">'+d+'</div>').join('');
-
-  const firstDow = new Date(y,m,1).getDay();
-  const offset = firstDow===0 ? 6 : firstDow-1;
-  const daysInMonth = new Date(y,m+1,0).getDate();
-  const today = new Date();
-
-  let html = '';
-  for (let i=0; i<offset; i++) html += '<div class="day-cell empty"></div>';
-  let totalHours=0, totalDays=0;
-
-  for (let d=1; d<=daysInMonth; d++) {
-    const key = dateKey(y,m,d);
-    const shift = shifts[key];
-    const isToday = today.getFullYear()===y && today.getMonth()===m && today.getDate()===d;
-    let cls = 'day-cell';
-    if (isToday) cls += ' today';
-    if (shift) { cls += ' has-shift'; totalDays++; }
-    let inner = '<div class="day-num">'+d+'</div>';
-    if (shift) {
-      const h = calcHours(shift.start, shift.end, shift.brk);
-      totalHours += h;
-      inner += '<div class="shift-time">'+shift.start+'–'+shift.end+'</div>';
-      inner += '<div class="shift-earn">€'+(h*hourlyRate).toFixed(2)+'</div>';
+  const y=currentDate.getFullYear(),m=currentDate.getMonth();
+  document.getElementById('month-label').textContent=MONTHS[m]+' '+y;
+  document.getElementById('day-headers').innerHTML=DAYS.map(d=>'<div class="day-header">'+d+'</div>').join('');
+  const firstDow=new Date(y,m,1).getDay(),offset=firstDow===0?6:firstDow-1;
+  const dim=new Date(y,m+1,0).getDate(),today=new Date();
+  let html='';
+  for(let i=0;i<offset;i++)html+='<div class="day-cell empty"></div>';
+  let totalHours=0,totalDays=0,totalIncome=0;
+  const wpHours={},wpIncome={};
+  for(let d=1;d<=dim;d++){
+    const key=dateKey(y,m,d),data=shifts[key];
+    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
+    const sl=data?(Array.isArray(data.shifts)?data.shifts:[{start:data.start,end:data.end,brk:data.brk||0,rate:data.rate||hourlyRate,wp:data.wp||''}]):[];
+    const hasShift=sl.length>0,isMulti=sl.length>1;
+    let cls='day-cell';
+    if(isToday)cls+=' today';
+    if(hasShift){cls+=isMulti?' multi-shift':' has-shift';totalDays++;}
+    let inner='<div class="day-num">'+d+'</div>';
+    if(hasShift){
+      let dayTotal=0;
+      sl.forEach((s,i)=>{
+        const r=s.rate||hourlyRate,h=calcHours(s.start,s.end,s.brk),earn=h*r;
+        dayTotal+=earn;totalHours+=h;totalIncome+=earn;
+        if(s.wp){wpHours[s.wp]=(wpHours[s.wp]||0)+h;wpIncome[s.wp]=(wpIncome[s.wp]||0)+earn;}
+        if(i>0)inner+='<div class="shift-divider"></div>';
+        inner+='<div class="shift-entry"><div class="shift-time">'+s.start+'–'+s.end+'</div><div class="shift-earn'+(i>0?' alt':'')+'">€'+earn.toFixed(2)+'</div></div>';
+      });
+      if(isMulti)inner+='<div class="day-total">€'+dayTotal.toFixed(2)+'</div>';
     }
-    html += '<div class="'+cls+'" data-day="'+d+'">'+inner+'</div>';
+    html+='<div class="'+cls+'" data-day="'+d+'">'+inner+'</div>';
   }
-
-  document.getElementById('cal-grid').innerHTML = html;
-  document.querySelectorAll('.day-cell[data-day]').forEach(el => {
-    el.addEventListener('click', () => openModal(parseInt(el.dataset.day)));
-  });
-
-  const income = totalHours * hourlyRate;
-  document.getElementById('stat-days').textContent = totalDays;
-  document.getElementById('stat-hours').textContent = fmtHours(totalHours);
-  document.getElementById('stat-income').textContent = '€'+income.toFixed(2);
-  document.getElementById('stat-yearly').textContent = '€…';
-
-  // Yearly total with per-month rates
-  if (currentUser) {
-    const currentYear = y;
-    const monthlyHours = {};
-    Object.keys(shifts).forEach(key => {
-      const parts = key.split('-');
-      if (parseInt(parts[0]) === currentYear) {
-        const mk = parts[0]+'-'+parts[1];
-        const s = shifts[key];
-        const h = calcHours(s.start, s.end, s.brk);
-        monthlyHours[mk] = (monthlyHours[mk]||0) + h;
+  document.getElementById('cal-grid').innerHTML=html;
+  document.querySelectorAll('.day-cell[data-day]').forEach(el=>el.addEventListener('click',()=>openModal(parseInt(el.dataset.day))));
+  document.getElementById('stat-days').textContent=totalDays;
+  document.getElementById('stat-hours').textContent=fmtH(totalHours);
+  document.getElementById('stat-income').textContent='€'+totalIncome.toFixed(2);
+  document.getElementById('stat-yearly').textContent='€…';
+  if(multiMode&&Object.keys(wpIncome).length>0){
+    document.getElementById('wb-rows').innerHTML=Object.keys(wpIncome).map(wp=>{
+      const c=(workplaces.find(w=>w.name===wp)||{color:'#aaa'}).color;
+      return '<div class="wb-row"><span class="wb-name"><span style="width:8px;height:8px;border-radius:50%;background:'+c+';display:inline-block;"></span>'+wp+'</span><span class="wb-hours">'+fmtH(wpHours[wp]||0)+'</span><span class="wb-earn">€'+(wpIncome[wp]||0).toFixed(2)+'</span></div>';
+    }).join('');
+    document.getElementById('wb-total-val').textContent='€'+totalIncome.toFixed(2);
+    document.getElementById('wp-breakdown').classList.remove('hidden');
+  } else if(!multiMode) { document.getElementById('wp-breakdown').classList.add('hidden'); }
+  if(currentUser){
+    const cy=y,mh={};
+    Object.keys(shifts).forEach(k=>{
+      const p=k.split('-');
+      if(parseInt(p[0])===cy){
+        const mk=p[0]+'-'+p[1],d=shifts[k];
+        const sl=Array.isArray(d.shifts)?d.shifts:[{start:d.start,end:d.end,brk:d.brk||0,rate:d.rate||hourlyRate}];
+        sl.forEach(s=>{mh[mk]=(mh[mk]||{h:0,multi:false});mh[mk].h+=calcHours(s.start,s.end,s.brk)*(s.rate||hourlyRate);});
       }
     });
-    Promise.all(Object.keys(monthlyHours).map(async mk => {
-      const snap = await getDoc(doc(db, 'users', currentUser.uid, 'rates', mk));
-      const rate = snap.exists() ? (snap.data().value||12.1) : 12.1;
-      return monthlyHours[mk] * rate;
-    })).then(earnings => {
-      const yearly = earnings.reduce((a,b) => a+b, 0);
-      document.getElementById('stat-yearly').textContent = '€'+yearly.toFixed(2);
-    });
+    Promise.all(Object.keys(mh).map(async mk=>{
+      const snap=await getDoc(doc(db,'users',currentUser.uid,'rates',mk));
+      const inMulti=snap.exists()?(snap.data().multiMode||false):false;
+      if(inMulti)return mh[mk].h;
+      const rate=snap.exists()?(snap.data().rate||12.1):12.1;
+      return Object.keys(shifts).filter(k=>k.startsWith(mk)).reduce((acc,k)=>{
+        const d=shifts[k];
+        const sl=Array.isArray(d.shifts)?d.shifts:[{start:d.start,end:d.end,brk:d.brk||0,rate:rate}];
+        return acc+sl.reduce((a,s)=>a+calcHours(s.start,s.end,s.brk)*(s.rate||rate),0);
+      },0);
+    })).then(vals=>document.getElementById('stat-yearly').textContent='€'+vals.reduce((a,b)=>a+b,0).toFixed(2));
   }
 }
 
-function updatePreview() {
-  const s = document.getElementById('start-time').value;
-  const e = document.getElementById('end-time').value;
-  const b = parseInt(document.getElementById('break-mins').value)||0;
-  if (s && e) {
-    const h = calcHours(s,e,b);
-    document.getElementById('hours-preview').textContent = fmtHours(h)+' hrs  •  €'+(h*hourlyRate).toFixed(2);
-  }
+// Modal
+let modalShifts=[];
+function buildShiftBlock(idx,shift){
+  const wpOpts=workplaces.map(w=>'<option value="'+w.name+'"'+(shift.wp===w.name?' selected':'')+'>'+w.name+'</option>').join('');
+  return `<div class="shift-block" id="sb-${idx}">
+    <div class="shift-block-title"><span>Shift ${idx+1}</span>${idx>0?'<button class="btn-remove-shift" data-idx="'+idx+'">✕</button>':''}</div>
+    ${multiMode&&workplaces.length>0?`<div class="field"><label>Workplace</label><select class="sb-wp" data-idx="${idx}"><option value="">None</option>${wpOpts}</select></div>`:''}
+    <div class="field"><label>Start</label><input type="time" class="sb-start" data-idx="${idx}" value="${shift.start}"></div>
+    <div class="field"><label>Finish</label><input type="time" class="sb-end" data-idx="${idx}" value="${shift.end}"></div>
+    ${multiMode?`<div class="field"><label>Rate (€/hr)</label><input type="number" class="sb-rate" data-idx="${idx}" value="${shift.rate||hourlyRate}" step="0.1" min="0" style="width:100px;"></div>`:''}
+    <div class="field"><label>Break (mins)</label><input type="number" class="sb-brk" data-idx="${idx}" value="${shift.brk||0}" min="0" max="480" style="width:100px;"></div>
+  </div>`;
 }
 
-function openModal(day) {
-  selectedDay = day;
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-  const key = dateKey(y,m,day);
-  const shift = shifts[key];
-  const dow = new Date(y,m,day).getDay();
-  const isWeekend = dow===0||dow===6;
-  document.getElementById('modal-title').textContent = day+' '+MONTHS_SHORT[m]+' '+y;
-  document.getElementById('start-time').value = shift ? shift.start : (isWeekend ? '10:30' : '09:30');
-  document.getElementById('end-time').value = shift ? shift.end : '21:00';
-  document.getElementById('break-mins').value = shift ? (shift.brk||0) : 0;
-  document.getElementById('modal-delete').style.display = shift ? 'inline-block' : 'none';
-  updatePreview();
+function updateModalPreview(){
+  if(!multiMode){
+    const s=document.querySelector('.sb-start'),e=document.querySelector('.sb-end'),b=document.querySelector('.sb-brk');
+    if(s&&e){const h=calcHours(s.value,e.value,parseInt(b?.value||0));document.getElementById('hours-preview').textContent=fmtH(h)+' hrs  •  €'+(h*hourlyRate).toFixed(2);}
+    return;
+  }
+  let total=0;
+  document.querySelectorAll('.shift-block').forEach((_,i)=>{
+    const s=document.querySelector('.sb-start[data-idx="'+i+'"]');
+    const e=document.querySelector('.sb-end[data-idx="'+i+'"]');
+    const b=document.querySelector('.sb-brk[data-idx="'+i+'"]');
+    const r=document.querySelector('.sb-rate[data-idx="'+i+'"]');
+    if(s&&e)total+=calcHours(s.value,e.value,parseInt(b?.value||0))*(parseFloat(r?.value)||hourlyRate);
+  });
+  document.getElementById('day-total-preview').textContent='Day total: €'+total.toFixed(2);
+}
+
+function renderShiftBlocks(){
+  document.getElementById('shift-blocks').innerHTML=modalShifts.map((s,i)=>buildShiftBlock(i,s)).join('');
+  document.querySelectorAll('.sb-start,.sb-end,.sb-brk,.sb-rate,.sb-wp').forEach(el=>el.addEventListener('input',updateModalPreview));
+  document.querySelectorAll('.btn-remove-shift').forEach(btn=>btn.addEventListener('click',()=>{
+    modalShifts.splice(parseInt(btn.dataset.idx),1);renderShiftBlocks();updateModalPreview();
+  }));
+}
+
+function openModal(day){
+  selectedDay=day;
+  const y=currentDate.getFullYear(),m=currentDate.getMonth(),key=dateKey(y,m,day),data=shifts[key];
+  document.getElementById('modal-title').textContent=day+' '+MONTHS_SHORT[m]+' '+y;
+  const dow=new Date(y,m,day).getDay(),isWknd=dow===0||dow===6;
+  const defStart=isWknd?'10:30':'09:30';
+  if(data){modalShifts=Array.isArray(data.shifts)?[...data.shifts]:[{start:data.start,end:data.end,brk:data.brk||0,rate:data.rate||hourlyRate,wp:data.wp||''}];}
+  else{const defWp=workplaces.length>0&&multiMode?workplaces[0].name:'',defRate=workplaces.length>0&&multiMode?workplaces[0].rate:hourlyRate;modalShifts=[{start:defStart,end:'21:00',brk:0,rate:defRate,wp:defWp}];}
+  renderShiftBlocks();
+  document.getElementById('modal-delete').classList.toggle('hidden',!data);
+  document.getElementById('btn-add-shift').classList.toggle('hidden',!multiMode);
+  document.getElementById('hours-preview').classList.toggle('hidden',multiMode);
+  document.getElementById('day-total-preview').classList.toggle('hidden',!multiMode);
+  document.getElementById('gcal-checkbox-wrap').classList.toggle('hidden',!gcalToken);
+  updateModalPreview();
   document.getElementById('modal').classList.remove('hidden');
 }
 
-['start-time','end-time','break-mins'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updatePreview);
+document.getElementById('btn-add-shift').addEventListener('click',()=>{
+  const prev=modalShifts.length>0?modalShifts[modalShifts.length-1].wp:'';
+  const next=workplaces.find(w=>w.name!==prev);
+  modalShifts.push({start:'09:30',end:'21:00',brk:0,rate:next?next.rate:hourlyRate,wp:next?next.name:''});
+  renderShiftBlocks();updateModalPreview();
 });
 
-document.getElementById('modal-cancel').addEventListener('click', () => {
-  document.getElementById('modal').classList.add('hidden');
-});
+document.getElementById('modal-cancel').addEventListener('click',()=>document.getElementById('modal').classList.add('hidden'));
 
-document.getElementById('modal-save').addEventListener('click', async () => {
-  if (!currentUser) return;
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-  const key = dateKey(y,m,selectedDay);
-  syncEl.textContent = '● Syncing...'; syncEl.className = 'sync-status syncing';
-  await setDoc(doc(db,'users',currentUser.uid,'shifts',key), {
-    start: document.getElementById('start-time').value,
-    end: document.getElementById('end-time').value,
-    brk: parseInt(document.getElementById('break-mins').value)||0
+document.getElementById('modal-save').addEventListener('click',async()=>{
+  if(!currentUser)return;
+  const y=currentDate.getFullYear(),m=currentDate.getMonth(),key=dateKey(y,m,selectedDay);
+  const shiftList=[];
+  document.querySelectorAll('.shift-block').forEach((_,i)=>{
+    const s=document.querySelector('.sb-start[data-idx="'+i+'"]')?.value||'09:30';
+    const e=document.querySelector('.sb-end[data-idx="'+i+'"]')?.value||'21:00';
+    const b=parseInt(document.querySelector('.sb-brk[data-idx="'+i+'"]')?.value||0);
+    const r=parseFloat(document.querySelector('.sb-rate[data-idx="'+i+'"]')?.value||hourlyRate);
+    const wp=document.querySelector('.sb-wp[data-idx="'+i+'"]')?.value||'';
+    shiftList.push({start:s,end:e,brk:b,rate:r,wp});
   });
+  syncEl.textContent='● Syncing...';syncEl.className='sync-status syncing';
+  await setDoc(doc(db,'users',currentUser.uid,'shifts',key),{shifts:shiftList});
+  if(gcalToken&&document.getElementById('gcal-auto-sync').checked){
+    await addToGcal(key,shiftList);
+    showToast('✅ Saved & synced to Google Calendar!');
+  } else { showToast('✅ Shift saved!'); }
   document.getElementById('modal').classList.add('hidden');
 });
 
-document.getElementById('modal-delete').addEventListener('click', async () => {
-  if (!currentUser) return;
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-  const key = dateKey(y,m,selectedDay);
-  syncEl.textContent = '● Syncing...'; syncEl.className = 'sync-status syncing';
-  await deleteDoc(doc(db,'users',currentUser.uid,'shifts',key));
+document.getElementById('modal-delete').addEventListener('click',async()=>{
+  if(!currentUser)return;
+  const y=currentDate.getFullYear(),m=currentDate.getMonth();
+  await deleteDoc(doc(db,'users',currentUser.uid,'shifts',dateKey(y,m,selectedDay)));
   document.getElementById('modal').classList.add('hidden');
+  showToast('Shift deleted');
 });
 
-document.getElementById('prev-btn').addEventListener('click', () => {
-  currentDate.setMonth(currentDate.getMonth()-1);
-  loadRateForMonth(currentDate.getFullYear(), currentDate.getMonth());
-});
+document.getElementById('prev-btn').addEventListener('click',()=>{currentDate.setMonth(currentDate.getMonth()-1);loadMonthSettings(currentDate.getFullYear(),currentDate.getMonth());});
+document.getElementById('next-btn').addEventListener('click',()=>{currentDate.setMonth(currentDate.getMonth()+1);loadMonthSettings(currentDate.getFullYear(),currentDate.getMonth());});
 
-document.getElementById('next-btn').addEventListener('click', () => {
-  currentDate.setMonth(currentDate.getMonth()+1);
-  loadRateForMonth(currentDate.getFullYear(), currentDate.getMonth());
-});
-
-// Export
-document.getElementById('export-btn').addEventListener('click', () => {
-  if (!currentUser) return;
-  const lines = Object.keys(shifts).sort().map(key => {
-    const s = shifts[key];
-    return key + ' ' + s.start + ' ' + s.end;
-  });
-  if (lines.length === 0) {
-    alert('No shifts to export!');
-    return;
-  }
-  const content = lines.join('\n');
-  const blob = new Blob([content], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'shifts_export_' + new Date().getFullYear() + '.txt';
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-// Bulk Import
-document.getElementById('import-btn').addEventListener('click', () => {
-  document.getElementById('import-text').value = '';
-  document.getElementById('import-result').textContent = '';
-  document.getElementById('import-modal').classList.remove('hidden');
-});
-
-document.getElementById('import-cancel').addEventListener('click', () => {
-  document.getElementById('import-modal').classList.add('hidden');
-});
-
-document.getElementById('import-save').addEventListener('click', async () => {
-  if (!currentUser) return;
-  const lines = document.getElementById('import-text').value.trim().split('\n');
-  const resultEl = document.getElementById('import-result');
-  const batch = writeBatch(db);
-  let count=0, errors=[];
-
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) continue;
-    const parts = line.split(/\s+/);
-    if (parts.length < 3) { errors.push(line); continue; }
-    const dateStr=parts[0], start=parts[1], end=parts[2];
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)||!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)) {
-      errors.push(line); continue;
-    }
-    batch.set(doc(db,'users',currentUser.uid,'shifts',dateStr), { start, end, brk:0 });
+// Import
+document.getElementById('import-btn').addEventListener('click',()=>{document.getElementById('import-text').value='';document.getElementById('import-result').textContent='';document.getElementById('import-modal').classList.remove('hidden');});
+document.getElementById('import-cancel').addEventListener('click',()=>document.getElementById('import-modal').classList.add('hidden'));
+document.getElementById('import-save').addEventListener('click',async()=>{
+  if(!currentUser)return;
+  const lines=document.getElementById('import-text').value.trim().split('\n');
+  const resultEl=document.getElementById('import-result');
+  const batch=writeBatch(db);let count=0,errors=[];
+  for(let line of lines){
+    line=line.trim();if(!line)continue;
+    const p=line.split(/\s+/);if(p.length<3){errors.push(line);continue;}
+    const[dateStr,start,end]=p;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)||!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)){errors.push(line);continue;}
+    batch.set(doc(db,'users',currentUser.uid,'shifts',dateStr),{shifts:[{start,end,brk:0,rate:hourlyRate,wp:''}]});
     count++;
   }
+  if(!count){resultEl.textContent='No valid shifts!';resultEl.className='import-result error';return;}
+  try{syncEl.textContent='● Syncing...';syncEl.className='sync-status syncing';await batch.commit();resultEl.textContent='✅ '+count+' shifts imported!';resultEl.className='import-result';setTimeout(()=>document.getElementById('import-modal').classList.add('hidden'),1500);}
+  catch(e){resultEl.textContent='Error. Check connection.';resultEl.className='import-result error';}
+});
 
-  if (count===0) {
-    resultEl.textContent = 'No valid shifts found!';
-    resultEl.className = 'import-result error';
-    return;
-  }
+// Export txt
+document.getElementById('export-txt-btn').addEventListener('click',()=>{
+  const lines=Object.keys(shifts).sort().flatMap(k=>{const d=shifts[k];const sl=Array.isArray(d.shifts)?d.shifts:[{start:d.start,end:d.end}];return sl.map(s=>k+' '+s.start+' '+s.end);});
+  if(!lines.length){showToast('No shifts to export',true);return;}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));a.download='shifts_export.txt';a.click();
+});
 
-  try {
-    syncEl.textContent = '● Syncing...'; syncEl.className = 'sync-status syncing';
-    await batch.commit();
-    resultEl.textContent = '✅ '+count+' shift(s) imported!';
-    resultEl.className = 'import-result';
-    setTimeout(() => document.getElementById('import-modal').classList.add('hidden'), 1500);
-  } catch(e) {
-    resultEl.textContent = 'Error. Check connection.';
-    resultEl.className = 'import-result error';
-  }
+// Export ICS
+document.getElementById('export-ics-btn').addEventListener('click',()=>{
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Shift Tracker//EN','CALSCALE:GREGORIAN'];
+  Object.keys(shifts).sort().forEach(k=>{
+    const d=shifts[k],sl=Array.isArray(d.shifts)?d.shifts:[{start:d.start,end:d.end,wp:'',rate:hourlyRate,brk:0}];
+    const[y,mo,day]=k.split('-');
+    sl.forEach((s,i)=>{
+      const h=calcHours(s.start,s.end,s.brk||0),earn=(h*(s.rate||hourlyRate)).toFixed(2);
+      lines.push('BEGIN:VEVENT','UID:'+k+'-'+i+'@shifttracker','DTSTART;TZID=Europe/Helsinki:'+y+mo+day+'T'+s.start.replace(':','')+'00','DTEND;TZID=Europe/Helsinki:'+y+mo+day+'T'+s.end.replace(':','')+'00','SUMMARY:'+(s.wp?'Work - '+s.wp:'Work Shift'),'DESCRIPTION:'+fmtH(h)+' hrs • €'+earn,'END:VEVENT');
+    });
+  });
+  lines.push('END:VCALENDAR');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\r\n')],{type:'text/calendar'}));a.download='shifts.ics';a.click();
+  showToast('✅ .ics exported! Import into any calendar app.');
+});
+
+// Export CSV
+document.getElementById('export-sheets-btn').addEventListener('click',()=>{
+  const rows=[['Date','Workplace','Start','End','Hours','Rate','Earnings']];
+  Object.keys(shifts).sort().forEach(k=>{const d=shifts[k];const sl=Array.isArray(d.shifts)?d.shifts:[{start:d.start,end:d.end,brk:d.brk||0,wp:'',rate:hourlyRate}];sl.forEach(s=>{const h=calcHours(s.start,s.end,s.brk||0);rows.push([k,s.wp||'',s.start,s.end,fmtH(h),(s.rate||hourlyRate).toFixed(2),(h*(s.rate||hourlyRate)).toFixed(2)]);});});
+  const csv=rows.map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='shifts.csv';a.click();
+  showToast('✅ CSV exported! Open in Google Sheets.');
+});
+
+// Export PDF
+document.getElementById('export-pdf-btn').addEventListener('click',()=>{
+  const y=currentDate.getFullYear(),m=currentDate.getMonth();
+  let rows='',totalH=0,totalE=0;
+  Object.keys(shifts).filter(k=>k.startsWith(y+'-'+String(m+1).padStart(2,'0'))).sort().forEach(k=>{
+    const d=shifts[k];const sl=Array.isArray(d.shifts)?d.shifts:[{start:d.start,end:d.end,brk:d.brk||0,wp:'',rate:hourlyRate}];
+    sl.forEach(s=>{const h=calcHours(s.start,s.end,s.brk||0),e=h*(s.rate||hourlyRate);totalH+=h;totalE+=e;rows+=`<tr><td>${k}</td><td>${s.wp||'-'}</td><td>${s.start}</td><td>${s.end}</td><td>${fmtH(h)}</td><td>€${(s.rate||hourlyRate).toFixed(2)}</td><td>€${e.toFixed(2)}</td></tr>`;});
+  });
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Shift Report - ${MONTHS[m]} ${y}</title><style>body{font-family:sans-serif;padding:20px;}h2{margin-bottom:12px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px;}th{background:#f4f4f4;font-weight:600;}tfoot td{font-weight:bold;background:#f9f9f9;}</style></head><body><h2>Shift Report — ${MONTHS[m]} ${y}</h2><table><thead><tr><th>Date</th><th>Workplace</th><th>Start</th><th>End</th><th>Hours</th><th>Rate</th><th>Earnings</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="4"><strong>Total</strong></td><td>${fmtH(totalH)}</td><td></td><td>€${totalE.toFixed(2)}</td></tr></tfoot></table></body></html>`);
+  win.document.close();win.print();
+});
+
+// Workplace manager
+document.getElementById('wp-manage-btn').addEventListener('click',()=>{renderWpList();document.getElementById('wp-modal').classList.remove('hidden');});
+document.getElementById('wp-close').addEventListener('click',()=>document.getElementById('wp-modal').classList.add('hidden'));
+
+function renderWpList(){
+  document.getElementById('wp-list').innerHTML=workplaces.map((w,i)=>`<div class="wp-item"><div class="wp-color" style="background:${w.color}"></div><span class="wp-name">${w.name}</span><span class="wp-rate">€${w.rate}/hr</span><button class="wp-del" data-idx="${i}">✕</button></div>`).join('');
+  document.querySelectorAll('.wp-del').forEach(btn=>btn.addEventListener('click',async()=>{workplaces.splice(parseInt(btn.dataset.idx),1);await saveWorkplaces();renderWpList();}));
+}
+
+document.getElementById('wp-add-btn').addEventListener('click',async()=>{
+  const name=document.getElementById('wp-name-input').value.trim(),rate=parseFloat(document.getElementById('wp-rate-input').value)||hourlyRate;
+  if(!name)return;
+  workplaces.push({name,rate,color:WP_COLORS[workplaces.length%WP_COLORS.length]});
+  await saveWorkplaces();
+  document.getElementById('wp-name-input').value='';document.getElementById('wp-rate-input').value='';
+  renderWpList();showToast('✅ Workplace added!');
 });
 </script>
 </body>
