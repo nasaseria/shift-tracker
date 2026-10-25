@@ -135,7 +135,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .import-result { font-size: 12px; color: #4caf82; text-align: center; margin-bottom: 8px; min-height: 18px; }
 .import-result.error { color: #c0504a; }
 
-.wp-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 10px; background: #111; border-radius: 8px; border: 1px solid #2a2a2a; }
+.wp-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 10px; background: #111; border-radius: 8px; border: 1px solid #2a2a2a; flex-wrap: wrap; }
+.wp-edit-row { display: flex; gap: 6px; width: 100%; margin-top: 6px; }
+.wp-edit-row input { flex: 1; background: #222; border: 1px solid #444; border-radius: 6px; padding: 5px 8px; color: #fff; font-size: 12px; }
+.wp-edit-row input[type=number] { width: 70px; flex: 0 0 70px; }
+.btn-wp-save { padding: 5px 10px; background: #1D9E75; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.btn-wp-edit { background: none; border: 1px solid #333; border-radius: 6px; color: #4ea3e0; cursor: pointer; font-size: 12px; padding: 2px 8px; }
+.btn-wp-edit:hover { background: #0d2233; }
 .wp-color { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 .wp-name { flex: 1; font-size: 13px; color: #eee; }
 .wp-rate { font-size: 12px; color: #aaa; }
@@ -628,7 +634,18 @@ function updateModalPreview(){
 
 function renderShiftBlocks(){
   document.getElementById('shift-blocks').innerHTML=modalShifts.map((s,i)=>buildShiftBlock(i,s)).join('');
-  document.querySelectorAll('.sb-start,.sb-end,.sb-brk,.sb-rate,.sb-wp').forEach(el=>el.addEventListener('input',updateModalPreview));
+  document.querySelectorAll('.sb-start,.sb-end,.sb-brk,.sb-rate').forEach(el=>el.addEventListener('input',updateModalPreview));
+
+  // Auto-update rate when workplace changes
+  document.querySelectorAll('.sb-wp').forEach(sel=>sel.addEventListener('change',function(){
+    const i=parseInt(this.dataset.idx);
+    const wp=workplaces.find(w=>w.name===this.value);
+    if(wp){
+      const rateInput=document.querySelector('.sb-rate[data-idx="'+i+'"]');
+      if(rateInput) rateInput.value=wp.rate;
+    }
+    updateModalPreview();
+  }));
   document.querySelectorAll('.btn-remove-shift').forEach(btn=>btn.addEventListener('click',()=>{
     modalShifts.splice(parseInt(btn.dataset.idx),1);renderShiftBlocks();updateModalPreview();
   }));
@@ -764,8 +781,48 @@ document.getElementById('wp-manage-btn').addEventListener('click',()=>{renderWpL
 document.getElementById('wp-close').addEventListener('click',()=>document.getElementById('wp-modal').classList.add('hidden'));
 
 function renderWpList(){
-  document.getElementById('wp-list').innerHTML=workplaces.map((w,i)=>`<div class="wp-item"><div class="wp-color" style="background:${w.color}"></div><span class="wp-name">${w.name}</span><span class="wp-rate">€${w.rate}/hr</span><button class="wp-del" data-idx="${i}">✕</button></div>`).join('');
-  document.querySelectorAll('.wp-del').forEach(btn=>btn.addEventListener('click',async()=>{workplaces.splice(parseInt(btn.dataset.idx),1);await saveWorkplaces();renderWpList();}));
+  document.getElementById('wp-list').innerHTML=workplaces.map((w,i)=>`
+    <div class="wp-item" id="wpi-${i}">
+      <div class="wp-color" style="background:${w.color}"></div>
+      <span class="wp-name" style="flex:1">${w.name}</span>
+      <span class="wp-rate">€${w.rate}/hr</span>
+      <button class="btn-wp-edit" data-idx="${i}">✏️ Edit</button>
+      <button class="wp-del" data-idx="${i}">✕</button>
+    </div>`).join('');
+
+  // Edit button → show inline edit fields
+  document.querySelectorAll('.btn-wp-edit').forEach(btn=>btn.addEventListener('click',()=>{
+    const i=parseInt(btn.dataset.idx), w=workplaces[i];
+    const item=document.getElementById('wpi-'+i);
+    // Toggle edit row
+    const existing=item.querySelector('.wp-edit-row');
+    if(existing){existing.remove();btn.textContent='✏️ Edit';return;}
+    btn.textContent='▲ Close';
+    const row=document.createElement('div');
+    row.className='wp-edit-row';
+    row.innerHTML=`
+      <input type="text" class="wp-edit-name" value="${w.name}" placeholder="Name">
+      <input type="number" class="wp-edit-rate" value="${w.rate}" placeholder="€/hr" step="0.1" min="0">
+      <button class="btn-wp-save" data-idx="${i}">Save</button>`;
+    item.appendChild(row);
+    row.querySelector('.btn-wp-save').addEventListener('click', async()=>{
+      const newName=row.querySelector('.wp-edit-name').value.trim();
+      const newRate=parseFloat(row.querySelector('.wp-edit-rate').value)||workplaces[i].rate;
+      if(!newName)return;
+      workplaces[i].name=newName;
+      workplaces[i].rate=newRate;
+      await saveWorkplaces();
+      showToast('✅ Workplace updated!');
+      renderWpList();
+    });
+  }));
+
+  document.querySelectorAll('.wp-del').forEach(btn=>btn.addEventListener('click',async()=>{
+    workplaces.splice(parseInt(btn.dataset.idx),1);
+    await saveWorkplaces();
+    renderWpList();
+    showToast('Workplace removed');
+  }));
 }
 
 document.getElementById('wp-add-btn').addEventListener('click',async()=>{
