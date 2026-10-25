@@ -411,25 +411,47 @@ document.getElementById('btn-gcal-connect').addEventListener('click', async()=>{
 async function addToGcal(dateStr, shiftList, title='Work Shift') {
   if(!gcalToken) return false;
   const [y,mo,d]=dateStr.split('-');
-  for(const s of shiftList) {
-    const summary = s.wp ? 'Work - '+s.wp : title;
+  let successCount=0, failCount=0;
+  for(let i=0; i<shiftList.length; i++) {
+    const s=shiftList[i];
+    const summary = s.wp ? 'Work - '+s.wp : (shiftList.length>1 ? title+' ('+(i+1)+')' : title);
     const h=calcHours(s.start,s.end,s.brk||0);
     const earn=(h*(s.rate||hourlyRate)).toFixed(2);
+    // Handle overnight shifts: if end <= start, end is next day
+    const startMins=timeToMins(s.start), endMins=timeToMins(s.end);
     const startDT=`${y}-${mo}-${d}T${s.start}:00`;
-    const endDT=`${y}-${mo}-${d}T${s.end}:00`;
-    await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+gcalToken,'Content-Type':'application/json'},
-      body:JSON.stringify({
-        summary,
-        description:`${fmtH(h)} hrs • €${earn}`,
-        start:{dateTime:startDT,timeZone:'Europe/Helsinki'},
-        end:{dateTime:endDT,timeZone:'Europe/Helsinki'},
-        reminders:{useDefault:false,overrides:[{method:'popup',minutes:15}]}
-      })
-    });
+    let endDT;
+    if(endMins<=startMins) {
+      // Next day
+      const nextDay=new Date(parseInt(y),parseInt(mo)-1,parseInt(d)+1);
+      const ny=nextDay.getFullYear(),nm=String(nextDay.getMonth()+1).padStart(2,'0'),nd=String(nextDay.getDate()).padStart(2,'0');
+      endDT=`${ny}-${nm}-${nd}T${s.end}:00`;
+    } else {
+      endDT=`${y}-${mo}-${d}T${s.end}:00`;
+    }
+    try {
+      const res=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+gcalToken,'Content-Type':'application/json'},
+        body:JSON.stringify({
+          summary,
+          description:`Shift ${i+1}/${shiftList.length} • ${fmtH(h)} hrs • €${earn}${s.wp?' • '+s.wp:''}`,
+          start:{dateTime:startDT,timeZone:'Europe/Helsinki'},
+          end:{dateTime:endDT,timeZone:'Europe/Helsinki'},
+          reminders:{useDefault:false,overrides:[{method:'popup',minutes:15}]}
+        })
+      });
+      if(res.ok) successCount++;
+      else {
+        const err=await res.json();
+        console.error('GCal error shift '+(i+1)+':',err);
+        failCount++;
+        if(res.status===401){gcalToken=null;localStorage.removeItem('gcal_token');updateGcalUI(false);showToast('Google Calendar token expired. Please reconnect.',true);return false;}
+      }
+    } catch(e) { console.error(e); failCount++; }
   }
-  return true;
+  if(failCount>0) showToast('⚠️ '+successCount+' synced, '+failCount+' failed',true);
+  return failCount===0;
 }
 
 // Sync whole month to Google Calendar
